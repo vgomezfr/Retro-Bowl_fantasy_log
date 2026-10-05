@@ -5,19 +5,19 @@ def main():
 
     valid_terminal_actions = {
         "main": {"P", "E"},
-        "player hub": {"L", "D", "R", "P", "X", "E"},
+        "player hub": {"L", "D", "R", "S", "P", "X", "E"},
         "game lookup": {"R", "H", "E"}
     }
 
     terminal_initial_prompts = {
         "main": "Choose player [P] or exit [E] \n",
-        "player hub": "Log game [L]     Delete game [D]     Retrieve game [R]     Choose different player[P]     Delete this player [X]     Exit [E] \n",
+        "player hub": "Log game [L]     Delete game [D]     Retrieve game [R]     Season stats [S] \nChoose different player[P]     Delete this player [X]     Exit [E] \n",
         "game lookup": "Retrieve another game [R]     Back to player hub [H]     Exit [E] \n"
     }
 
     terminal_reprompts = {
         "main": "Enter P to choose a player or E to exit \n",
-        "player hub": "Enter L to enter a game, D to delete a game, R to retrieve game data, P to access a different player, X to delete this player, or E to exit. \n",
+        "player hub": "Enter L to enter a game, D to delete a game, R to retrieve game data, S to retrieve season data, P to access a different player, X to delete this player, or E to exit. \n",
         "game lookup": "Enter R to retrieve another game, H to return to player hub, or E to exit. \n"
     }
 
@@ -70,6 +70,10 @@ def main():
         elif terminal_action == "R":
             display_game(player)
             terminal_state = "game lookup"
+
+        elif terminal_action == "S":
+            display_season(player)
+            # terminal_state remains "player hub"
 
         elif terminal_action == "H":
             terminal_state = "player hub"
