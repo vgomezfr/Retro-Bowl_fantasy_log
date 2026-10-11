@@ -1,7 +1,3 @@
-# TODO:
-# Make terminal more friendly to bad inputs
-# Clean up aesthetics of season stats plotting
-
 from retro_bowl_fantasy_stats import *
 
 def main():
@@ -14,7 +10,7 @@ def main():
     }
 
     terminal_initial_prompts = {
-        "main": "Choose player [P], Display player list [V], or exit [E] \n",
+        "main": "Choose player [P]     Display player list [V]     Exit [E] \n",
         "player hub": "Log game [L]     Delete game [D]     Retrieve game [R]     Season stats [S] \nChoose different player[P]     Delete this player [X]     Retire this player [Z]     Exit [E] \n",
         "game lookup": "Retrieve another game [R]     Back to player hub [H]     Exit [E] \n"
     }
