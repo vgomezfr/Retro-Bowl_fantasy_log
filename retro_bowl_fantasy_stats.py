@@ -280,6 +280,143 @@ class Player:
         season_fppg = sum(fseason) / len(fseason)
         return fseason, season_fppg
 
+    def display_season_stats(self, season, include_ps: bool = False, plot: bool = True):
+        def display_season_passing_stats(season: Player_Season, include_ps: bool):
+            if season.num_reg_season_games == 0: 
+                print("Season has no games logged. \n")
+                return
+
+            # Regular-season passing stats
+            total_cmp = sum([game.cmp for game in season.reg_season_games if game is not None])
+            total_att = sum([game.att for game in season.reg_season_games if game is not None])
+            total_pass_yds = sum([game.pass_yds for game in season.reg_season_games if game is not None])
+            total_pass_tds = sum([game.pass_tds for game in season.reg_season_games if game is not None])
+
+            # Add postseason stats if indicated
+            if include_ps and season.num_ps_games > 0:
+                # Postseason receiving stats
+                total_cmp += sum([game.cmp for game in season.ps_games.values() if game is not None])
+                total_att += sum([game.att for game in season.ps_games.values() if game is not None])
+                total_pass_yds += sum([game.pass_yds for game in season.ps_games.values() if game is not None])
+                total_pass_tds += sum([game.pass_tds for game in season.ps_games.values() if game is not None])
+
+            # Season passing averages
+            avg_cmp = round(total_cmp / num_games_played, ndigits=2)
+            avg_att = round(total_att / num_games_played, ndigits=2)
+            avg_pass_yds = round(total_pass_yds / num_games_played, ndigits=2)
+            avg_pass_tds = round(total_pass_tds / num_games_played, ndigits=2)
+            total_pass_avg = round(total_pass_yds / total_att, ndigits=2)
+            total_cmp_pct = round(total_cmp / total_att, ndigits=2) * 100.0
+
+            print(f"Season passing totals: {total_cmp}/{total_att} ({total_cmp_pct}%) for {total_pass_yds} yards and {total_pass_tds} touchdowns in {num_games_played} games")
+            print(f"Season passing averages: {avg_cmp}/{avg_att} for {avg_pass_yds} yards and {avg_pass_tds} touchdowns per game at {total_pass_avg} yards per attempt")
+
+        def display_season_rushing_stats(season: Player_Season, include_ps: bool):
+            # Regular-season rushing stats
+            total_carries = sum([game.carries for game in season.reg_season_games if game is not None])
+            total_rush_yds = sum([game.rush_yds for game in season.reg_season_games if game is not None])
+            total_rush_tds = sum([game.rush_tds for game in season.reg_season_games if game is not None])
+    
+            # Add postseason stats if indicated
+            if include_ps:
+                # Postseason rushing stats
+                total_carries += sum([game.carries for game in season.ps_games.values() if game is not None])
+                total_rush_yds += sum([game.rush_yds for game in season.ps_games.values() if game is not None])
+                total_rush_tds += sum([game.rush_tds for game in season.ps_games.values() if game is not None])
+
+            # Season rushing averages
+            avg_carries = round(total_carries / num_games_played, ndigits=2)
+            avg_rush_yds = round(total_rush_yds / num_games_played, ndigits=2)
+            avg_rush_tds = round(total_rush_tds / num_games_played, ndigits=2)
+            total_rush_avg = round(total_rush_yds / total_carries, ndigits=2)
+
+            print(f"Season rushing totals: {total_carries} carries for {total_rush_yds} yards and {total_rush_tds} touchdowns in {num_games_played} games")
+            print(f"Season rushing averages: {avg_carries} carries for {avg_rush_yds} yards and {avg_rush_tds} touchdowns per game at {total_rush_avg} yards per carry")
+
+        def display_season_receiving_stats(season: Player_Season, include_ps: bool):
+            # Regular-season receiving stats
+            total_rec = sum([game.rec for game in season.reg_season_games if game is not None])
+            total_rec_yds = sum([game.rec_yds for game in season.reg_season_games if game is not None])
+            total_rec_tds = sum([game.rec_tds for game in season.reg_season_games if game is not None])
+
+            if include_ps:
+                # Postseason receiving stats
+                total_rec += sum([game.rec for game in season.ps_games.values() if game is not None])
+                total_rec_yds += sum([game.rec_yds for game in season.ps_games.values() if game is not None])
+                total_rec_tds += sum([game.rec_tds for game in season.ps_games.values() if game is not None])
+
+            # Season receiving averages
+            avg_rec = round(total_rec / num_games_played, ndigits=2)
+            avg_rec_yds = round(total_rec_yds / num_games_played, ndigits=2)
+            avg_rec_tds = round(total_rec_tds / num_games_played, ndigits=2)
+            total_rec_avg = round(total_rec_yds / total_rec, ndigits=2)
+
+            print(f"Season receiving totals: {total_rec} receptions for {total_rec_yds} yards and {total_rec_tds} touchdowns in {num_games_played} games")
+            print(f"Season receiving averages: {avg_rec} receptions for {avg_rec_yds} yards and {avg_rec_tds} touchdowns per game at {total_rec_avg} yards per catch")
+
+        def plot_fantasy_season(games_played: list, season_fpts: list[int], avg_fpts: int):
+                plt.figure()
+
+                # Use integer positions for plotting and annotating, so both share one coordinate system
+                x_pos = list(range(len(games_played)))
+
+                plt.plot(x_pos, season_fpts, marker="o", label="Fantasy Points", linestyle="-")
+
+                # Relabel the ticks with the original week labels, including 'divisional'
+                plt.xticks(x_pos, [str(g) for g in games_played])
+
+                for xi, fscore in zip(x_pos, season_fpts):
+                    trunc_score = f'{fscore:.2f}' if self.position == "QB" else f'{fscore:.1f}'
+                    plt.annotate(
+                        trunc_score,
+                        (xi, fscore),              # annotate at the same position as the point
+                        textcoords='offset points',
+                        xytext=(0, 8),
+                        ha='center'
+                    )
+                plt.axhline(y=avg_fpts, label="Season Average", color="orange", linestyle="--")
+                plt.xlabel("Week")
+                plt.ylabel("Fantasy Points Scored")
+                plt.title(f"{self.name} Fantasy Points by Week")
+        
+                plt.legend()
+                plt.show()
+        
+        if type(season) == int:
+            season = self._fetch_season(season)
+
+        games_played = [game.week for game in season.reg_season_games if game is not None]
+        if include_ps:
+            games_played.extend([game.week for game in season.ps_games.values() if game is not None])
+
+        num_games_played = len(games_played)
+
+        if num_games_played == 0:
+            print("No games recorded in season. \n")
+            return
+
+        if self.position == "QB":
+            display_season_passing_stats(season, include_ps)
+            display_season_rushing_stats(season, include_ps)
+        elif self.position == "QB":
+            display_season_rushing_stats(season, include_ps)
+            display_season_receiving_stats(season, include_ps)
+        else: # WR or TE
+            display_season_receiving_stats(season, include_ps)
+
+        season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
+        if include_ps:
+            season_fpts.extend([game.fpts for game in season.ps_games.values() if game is not None])
+
+
+        total_fpts = round(sum(season_fpts), ndigits=2)
+        avg_fpts = round(total_fpts / num_games_played, ndigits=2)
+
+        print(f"Season fantasy stats: {total_fpts} fantasy points in {num_games_played} games, {avg_fpts} PPG")
+
+        if plot:
+            plot_fantasy_season(games_played, season_fpts, avg_fpts)
+
 class Quarterback(Player):
     def __init__(self, name: str, position: str, age: int, accuracy: int, strength: int, 
                             speed: int, stamina: int, career: list[Player_Season] = None):
@@ -372,86 +509,6 @@ class Quarterback(Player):
         output = "\n".join(out_lines)
 
         print(output)
-
-    def display_season_stats(self, season, include_ps: bool = False, plot: bool = True):
-        if type(season) == int:
-            season = self._fetch_season(season)
-
-        games_played = [game.week for game in season.reg_season_games if game is not None]
-        if include_ps:
-            games_played.extend([game.week for game in season.ps_games if game is not None])
-
-        num_games_played = len(games_played)
-
-        if num_games_played == 0:
-            print("No games recorded in season. \n")
-            return
-
-        # Regular-season passing stats
-        total_cmp = sum([game.cmp for game in season.reg_season_games if game is not None])
-        total_att = sum([game.att for game in season.reg_season_games if game is not None])
-        total_pass_yds = sum([game.pass_yds for game in season.reg_season_games if game is not None])
-        total_pass_tds = sum([game.pass_tds for game in season.reg_season_games if game is not None])
-            
-        # Regular-season rushing stats
-        total_carries = sum([game.carries for game in season.reg_season_games if game is not None])
-        total_rush_yds = sum([game.rush_yds for game in season.reg_season_games if game is not None])
-        total_rush_tds = sum([game.rush_tds for game in season.reg_season_games if game is not None])
-
-        season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
-
-        # Add postseason stats if indicated
-        if include_ps:
-            # Postseason receiving stats
-            total_cmp += sum([game.cmp for game in season.ps_games.values if game is not None])
-            total_att += sum([game.att for game in season.ps_games.values if game is not None])
-            total_pass_yds += sum([game.pass_yds for game in season.ps_games.values if game is not None])
-            total_pass_tds += sum([game.pass_tds for game in season.ps_games.values if game is not None])
-
-            # Postseason rushing stats
-            total_carries += sum([game.carries for game in season.ps_games.values if game is not None])
-            total_rush_yds += sum([game.rush_yds for game in season.ps_games.values if game is not None])
-            total_rush_tds += sum([game.rush_tds for game in season.ps_games.values if game is not None])
-
-            season_fpts.extend([game.fpts for game in season.ps_games.values if game is not None])
-
-        total_fpts = round(sum(season_fpts), ndigits=2)
-
-        # Season passing averages
-        avg_cmp = round(total_cmp / num_games_played, ndigits=2)
-        avg_att = round(total_att / num_games_played, ndigits=2)
-        avg_pass_yds = round(total_pass_yds / num_games_played, ndigits=2)
-        avg_pass_tds = round(total_pass_tds / num_games_played, ndigits=2)
-        total_pass_avg = round(total_pass_yds / total_att, ndigits=2)
-        total_cmp_pct = round(total_cmp / total_att, ndigits=2) * 100.0
-
-        # Season rushing averages
-        avg_carries = round(total_carries / num_games_played, ndigits=2)
-        avg_rush_yds = round(total_rush_yds / num_games_played, ndigits=2)
-        avg_rush_tds = round(total_rush_tds / num_games_played, ndigits=2)
-        total_rush_avg = round(total_rush_yds / total_carries, ndigits=2)
-
-        avg_fpts = round(total_fpts / num_games_played, ndigits=2)
-
-        print(f"Season passing totals: {total_cmp}/{total_att} ({total_cmp_pct}%) for {total_pass_yds} yards and {total_pass_tds} touchdowns in {num_games_played} games")
-        print(f"Season passing averages: {avg_cmp}/{avg_att} for {avg_pass_yds} yards and {avg_pass_tds} touchdowns per game at {total_pass_avg} yards per attempt")
-
-        print(f"Season rushing totals: {total_carries} carries for {total_rush_yds} yards and {total_rush_tds} touchdowns in {num_games_played} games")
-        print(f"Season rushing averages: {avg_carries} carries for {avg_rush_yds} yards and {avg_rush_tds} touchdowns per game at {total_rush_avg} yards per carry")
-
-        print(f"Season fantasy stats: {total_fpts} fantasy points in {num_games_played} games, {avg_fpts} PPG")
-
-        if plot:
-            plt.figure()
-
-            plt.plot(games_played, season_fpts, label="Fantasy Points", linestyle="-")
-            plt.axhline(y=avg_fpts, label="Season Average", color="orange", linestyle="--")
-            plt.xlabel("Week")
-            plt.ylabel("Fantasy Points Scored")
-            plt.title(f"{self.name} Fantasy Points by Week")
-
-            plt.legend()
-            plt.show()
 
 class Runningback(Player):
     def __init__(self, name: str, position: str, age: int, catching: int, strength: int, 
@@ -553,82 +610,6 @@ class Runningback(Player):
 
         print(output)
 
-    def display_season_stats(self, season, include_ps: bool = False, plot: bool = True):
-        if type(season) == int:
-            season = self._fetch_season(season)
-
-        games_played = [game.week for game in season.reg_season_games if game is not None]
-        if include_ps:
-            games_played.extend([game.week for game in season.ps_games if game is not None])
-
-        num_games_played = len(games_played)
-
-        if num_games_played == 0:
-            print("No games recorded in season. \n")
-            return
-
-        # Regular-season rushing stats
-        total_carries = sum([game.carries for game in season.reg_season_games if game is not None])
-        total_rush_yds = sum([game.rush_yds for game in season.reg_season_games if game is not None])
-        total_rush_tds = sum([game.rush_tds for game in season.reg_season_games if game is not None])
-
-        # Regular-season receiving stats
-        total_rec = sum([game.rec for game in season.reg_season_games if game is not None])
-        total_rec_yds = sum([game.rec_yds for game in season.reg_season_games if game is not None])
-        total_rec_tds = sum([game.rec_tds for game in season.reg_season_games if game is not None])
-
-        season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
-
-        # Add postseason stats if indicated
-        if include_ps:
-            # Postseason rushing stats
-            total_carries += sum([game.carries for game in season.ps_games.values if game is not None])
-            total_rush_yds += sum([game.rush_yds for game in season.ps_games.values if game is not None])
-            total_rush_tds += sum([game.rush_tds for game in season.ps_games.values if game is not None])
-
-            # Postseason receiving stats
-            total_rec += sum([game.rec for game in season.ps_games.values if game is not None])
-            total_rec_yds += sum([game.rec_yds for game in season.ps_games.values if game is not None])
-            total_rec_tds += sum([game.rec_tds for game in season.ps_games.values if game is not None])
-
-            season_fpts.extend([game.fpts for game in season.ps_games.values if game is not None])
-
-        total_fpts = round(sum(season_fpts), ndigits=2)
-
-        # Season rushing averages
-        avg_carries = round(total_carries / num_games_played, ndigits=2)
-        avg_rush_yds = round(total_rush_yds / num_games_played, ndigits=2)
-        avg_rush_tds = round(total_rush_tds / num_games_played, ndigits=2)
-        total_rush_avg = round(total_rush_yds / total_carries, ndigits=2)
-
-        # Season receiving averages
-        avg_rec = round(total_rec / num_games_played, ndigits=2)
-        avg_rec_yds = round(total_rec_yds / num_games_played, ndigits=2)
-        avg_rec_tds = round(total_rec_tds / num_games_played, ndigits=2)
-        total_rec_avg = round(total_rec_yds / total_rec, ndigits=2)
-        avg_fpts = round(total_fpts / num_games_played, ndigits=2)
-
-        print(f"Season rushing totals: {total_carries} carries for {total_rush_yds} yards and {total_rush_tds} touchdowns in {num_games_played} games")
-        print(f"Season rushing averages: {avg_carries} carries for {avg_rush_yds} yards and {avg_rush_tds} touchdowns per game at {total_rush_avg} yards per carry")
-
-        print(f"Season receiving totals: {total_rec} receptions for {total_rec_yds} yards and {total_rec_tds} touchdowns in {num_games_played} games")
-        print(f"Season receiving averages: {avg_rec} receptions for {avg_rec_yds} yards and {avg_rec_tds} touchdowns per game at {total_rec_avg} yards per catch")
-
-        print(f"Season fantasy stats: {total_fpts} fantasy points in {num_games_played} games, {avg_fpts} PPG")
-
-        if plot:
-            plt.figure()
-
-            plt.plot(games_played, season_fpts, label="Fantasy Points", linestyle="-")
-            plt.axhline(y=avg_fpts, label="Season Average", color="orange", linestyle="--")
-            plt.xlabel("Week")
-            plt.ylabel("Fantasy Points Scored")
-            plt.title(f"{self.name} Fantasy Points by Week")
-
-            plt.legend()
-            plt.show()
-
-
 # Receiver class applies to both WRs and TEs
 class Receiver(Player):
     def __init__(self, name: str, position: str, age: int, catching: int, strength: int, 
@@ -716,64 +697,6 @@ class Receiver(Player):
 
         print(output)
 
-    def display_season_stats(self, season, include_ps: bool = False, plot: bool = True):
-        if type(season) == int:
-            season = self._fetch_season(season)
-
-        games_played = [game.week for game in season.reg_season_games if game is not None]
-        if include_ps:
-            games_played.extend([game.week for game in season.ps_games if game is not None])
-
-        num_games_played = len(games_played)
-
-        if num_games_played == 0:
-            print("No games recorded in season. \n")
-            return
-        
-        # Regular-season receiving stats
-        total_rec = sum([game.rec for game in season.reg_season_games if game is not None])
-        total_rec_yds = sum([game.rec_yds for game in season.reg_season_games if game is not None])
-        total_rec_tds = sum([game.rec_tds for game in season.reg_season_games if game is not None])
-
-        season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
-
-        # Add postseason stats if indicated
-        if include_ps:
-            # Postseason receiving stats
-            total_rec += sum([game.rec for game in season.ps_games.values if game is not None])
-            total_rec_yds += sum([game.rec_yds for game in season.ps_games.values if game is not None])
-            total_rec_tds += sum([game.rec_tds for game in season.ps_games.values if game is not None])
-
-            season_fpts.extend([game.fpts for game in season.ps_games.values if game is not None])
-
-        total_fpts = round(sum(season_fpts), ndigits=2)
-
-        # Season receiving averages
-        avg_rec = round(total_rec / num_games_played, ndigits=2)
-        avg_rec_yds = round(total_rec_yds / num_games_played, ndigits=2)
-        avg_rec_tds = round(total_rec_tds / num_games_played, ndigits=2)
-        total_rec_avg = round(total_rec_yds / total_rec, ndigits=2)
-
-        avg_fpts = round(total_fpts / num_games_played, ndigits=2)
-
-        print(f"Season receiving totals: {total_rec} receptions for {total_rec_yds} yards and {total_rec_tds} touchdowns in {num_games_played} games")
-        print(f"Season receiving averages: {avg_rec} receptions for {avg_rec_yds} yards and {avg_rec_tds} touchdowns per game at {total_rec_avg} yards per catch")
-
-        print(f"Season fantasy stats: {total_fpts} fantasy points in {num_games_played} games, {avg_fpts} PPG")
-
-        if plot:
-            plt.figure()
-
-            plt.plot(games_played, season_fpts, label="Fantasy Points", linestyle="-")
-            plt.axhline(y=avg_fpts, label="Season Average", color="orange", linestyle="--")
-            plt.xlabel("Week")
-            plt.ylabel("Fantasy Points Scored")
-            plt.title(f"{self.name} Fantasy Points by Week")
-
-            plt.legend()
-            plt.show()
-
-
 ################################ Data saving, loading, I/O ###############################
 def encode(obj):
     if hasattr(obj, "to_dict"):
@@ -841,8 +764,33 @@ def delete_player(players: dict[Player], player_name: str) -> None:
         print("Player not in registry.")
 
 def log_game(player: Player):
-    ps_game_keys = {"wild card", "divisional", "conference", "super bowl"}
-    valid_week_inputs = set([str(v) for v in list(range(1, 19))]).union(ps_game_keys)
+    valid_ps_game_inputs = {"wc": "WC",
+                            "WC": "WC",
+                            "wild card": "WC",
+                            "Wild card": "WC",
+                            "Wild Card": "WC",
+                            "wildcard": "WC",
+                            "Wildcard": "WC",
+                            "division": "D",
+                            "Division": "D",
+                            "divisional": "D", 
+                            "Divisional": "D",
+                            "conference": "C",
+                            "Conference": "C",
+                            "conference championship": "C",
+                            "Conference championship": "C",
+                            "Conference Championship": "C",
+                            "NFC": "C",
+                            "AFC": "C",
+                            "super bowl": "SB",
+                            "Super bowl": "SB",
+                            "Super Bowl": "SB",
+                            "superbowl": "SB",
+                            "Superbowl": "SB",
+                            "sb": "SB",
+                            "SB": "SB"}
+
+    valid_week_inputs = set([str(v) for v in list(range(1, 19))]).union(set(valid_ps_game_inputs))
 
     season = int(input("Enter season number or -1 to add to current season. \n"))
     while not (-1 <= season <= 20):
@@ -850,9 +798,11 @@ def log_game(player: Player):
 
     week = input("Week? \n")
     while week not in valid_week_inputs:
-        week = input("Enter a number 1-18 for regular season game or one of 'wild card', 'divisional', 'conference', or 'super bowl' for postseason game. \n")
+        week = input("Enter a number 1-18 for regular season game or playoff round for postseason game. \n")
 
-    if week not in ps_game_keys:
+    if week in valid_ps_game_inputs:
+        week = valid_ps_game_inputs[week]
+    else:
         week = int(week)
 
     opponent = input("Opponent? \n")
@@ -899,12 +849,93 @@ def log_game(player: Player):
     except:
         print("Add game failed. \n")
 
-def display_game(player: Player):
-    season = int(input("Season? \n"))
-    week = input("Week? \n")
+def delete_game(player: Player):
+    valid_ps_game_inputs = {"wc": "WC",
+                            "WC": "WC",
+                            "wild card": "WC",
+                            "Wild card": "WC",
+                            "Wild Card": "WC",
+                            "wildcard": "WC",
+                            "Wildcard": "WC",
+                            "division": "D",
+                            "Division": "D",
+                            "divisional": "D", 
+                            "Divisional": "D",
+                            "conference": "C",
+                            "Conference": "C",
+                            "conference championship": "C",
+                            "Conference championship": "C",
+                            "Conference Championship": "C",
+                            "NFC": "C",
+                            "AFC": "C",
+                            "super bowl": "SB",
+                            "Super bowl": "SB",
+                            "Super Bowl": "SB",
+                            "superbowl": "SB",
+                            "Superbowl": "SB",
+                            "sb": "SB",
+                            "SB": "SB"}
+    
+    valid_week_inputs = set([str(v) for v in list(range(1, 19))]).union(set(valid_ps_game_inputs))
 
-    ps_game_keys = {"wild card", "divisional", "conference", "super bowl"}
-    if week not in ps_game_keys:
+    season = int(input("Enter season number or -1 to add to current season. \n"))
+    while not (-1 <= season <= 20):
+        season = int(input("Enter a season number (1-20), or enter [-1] to add to current season. \n"))
+
+    week = input("Week? \n")
+    while week not in valid_week_inputs:
+        week = input("Enter a number 1-18 for regular season game or playoff round for postseason game. \n")
+
+    if week in valid_ps_game_inputs:
+        week = valid_ps_game_inputs[week]
+    else:
+        week = int(week)
+
+    try:
+        player.delete_game(season, week)
+        print("Game deleted. \n")
+    except:
+        print("Delete game failed. \n")
+
+def display_game(player: Player):
+    valid_ps_game_inputs = {"wc": "WC",
+                                "WC": "WC",
+                                "wild card": "WC",
+                                "Wild card": "WC",
+                                "Wild Card": "WC",
+                                "wildcard": "WC",
+                                "Wildcard": "WC",
+                                "division": "D",
+                                "Division": "D",
+                                "divisional": "D", 
+                                "Divisional": "D",
+                                "conference": "C",
+                                "Conference": "C",
+                                "conference championship": "C",
+                                "Conference championship": "C",
+                                "Conference Championship": "C",
+                                "NFC": "C",
+                                "AFC": "C",
+                                "super bowl": "SB",
+                                "Super bowl": "SB",
+                                "Super Bowl": "SB",
+                                "superbowl": "SB",
+                                "Superbowl": "SB",
+                                "sb": "SB",
+                                "SB": "SB"}
+    valid_week_inputs = set([str(v) for v in list(range(1, 19))]).union(set(valid_ps_game_inputs))
+
+    season = int(input("Enter season number or -1 to add to current season. \n"))
+    while not (-1 <= season <= 20):
+        season = int(input("Enter a season number (1-20), or enter [-1] to add to current season. \n"))
+
+    week = input("Week? \n")
+    while week not in valid_week_inputs:
+        week = input("Enter a number 1-18 for regular season game or playoff round for postseason game. \n")
+
+    if week in valid_ps_game_inputs:
+        week = valid_ps_game_inputs[week]
+    else:
         week = int(week)
 
     try:
@@ -914,28 +945,12 @@ def display_game(player: Player):
 
 def display_season(player: Player):
     season = int(input("Season? \n"))
-    player.display_season_stats(season)
-
-def delete_game(player: Player):
-    ps_game_keys = {"wild card", "divisional", "conference", "super bowl"}
-    valid_week_inputs = set([str(v) for v in list(range(1, 19))]).union(ps_game_keys)
-
-    season = int(input("Enter season number or -1 to add to current season. \n"))
-    while not (-1 <= season <= 20):
-        season = int(input("Enter a season number (1-20), or enter [-1] for current season. \n"))
-
-    week = input("Week? \n")
-    while week not in valid_week_inputs:
-        week = input("Enter a number 1-18 for regular season game or one of 'wild card', 'divisional', 'conference', or 'super bowl' for postseason game. \n")
-
-    if week not in ps_game_keys:
-        week = int(week)
+    include_ps = True if input("Include postseason? [Y]/[N] \n") == "Y" else False
 
     try:
-        player.delete_game(season, week)
-        print("Game deleted. \n")
+        player.display_season_stats(season, include_ps)
     except:
-        print("Delete game failed. \n")
+        print("An error occurred. Try not including postseason if the player did not play any games that postseason. \n")
 
 def delete_player(players: dict[Player], player: Player):
     players.pop(player.name)

@@ -1,3 +1,7 @@
+# TODO:
+# Make terminal more friendly to bad inputs
+# Clean up aesthetics of season stats plotting
+
 from retro_bowl_fantasy_stats import *
 
 def main():
@@ -17,7 +21,7 @@ def main():
 
     terminal_reprompts = {
         "main": "Enter P to choose a player or E to exit \n",
-        "player hub": "Enter L to enter a game, D to delete a game, R to retrieve game data, S to retrieve season data, P to access a different player, X to delete this player, or E to exit. \n",
+        "player hub": "Enter L to enter a game, D to delete a game, R to retrieve game data, S to retrieve season data, \nP to access a different player, X to delete this player, or E to exit. \n",
         "game lookup": "Enter R to retrieve another game, H to return to player hub, or E to exit. \n"
     }
 
@@ -31,14 +35,17 @@ def main():
         # Handle all invalid terminal inputs before advancing
         while terminal_action not in valid_terminal_actions[terminal_state]:
             terminal_action = input(terminal_reprompts[terminal_state])
-
         
         if terminal_action == "P":
             # Player selection
             player_name = input("Player name? \n")
 
             if players.get(player_name) is None:
-                create_player(players, player_name)
+                confirm_new_player = input("Player name not in database. Create new player? [Y]/[N] \n")
+                if confirm_new_player == "Y":
+                    create_player(players, player_name)
+                else:
+                    continue
 
             player = players[player_name]
 
