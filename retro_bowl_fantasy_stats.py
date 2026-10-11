@@ -393,7 +393,6 @@ class Player:
             display_season_receiving_stats(season, include_ps)
 
         season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
-        print(season_fpts)
         if include_ps:
             season_fpts.extend([game.fpts for game in season.ps_games.values() if game is not None])
 
