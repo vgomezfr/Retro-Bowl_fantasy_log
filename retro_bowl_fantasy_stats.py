@@ -202,16 +202,10 @@ class Player_Season():
 
 ################################ PLAYER CLASS AND SUBCLASSES ###############################
 class Player:
-    def __init__(self, name: str, position: str, age: int,
-                 speed: int, stamina: int, career: list[Player_Season] = None):
-        
+    def __init__(self, name: str, position: str, retired: bool = False, career: list[Player_Season] = None):
         self.name = name
         self.position = position
-        self.age = age
-        self.experience = 0
-
-        self.speed = speed
-        self.stamina = stamina
+        self.retired = retired
 
         if career is not None:
             self.career_stats = career
@@ -219,22 +213,14 @@ class Player:
             self.career_stats = [Player_Season()]
 
     def __repr__(self):
-        return f"{self.name}, {self.age}-yr old {self.position}"
+        return f"{self.name}, {self.position}"
 
     def summary(self):
-        if self.experience == 0:
-            experience_phrase = "rookie season"
-        elif self.experience == 1:
-            experience_phrase = "2nd season"
-        elif self.experience == 2:
-            experience_phrase = "3rd season"
-        else:
-            experience_phrase = f"{self.experience - 1}th season"
-        print(f"{self.name}, {self.age}-yr old {self.position} in {experience_phrase}")
+        experience = len(self.career_stats) - 1
+        print(f"{self.name}, {self.position} with {experience} season(s) of experience")
 
     def _add_season(self):
         self.career_stats.append(Player_Season())
-        self.experience += 1
 
     def _fetch_season(self, season: int) -> Player_Season:
         if not (season == -1 or 1 <= season <= len(self.career_stats)):
@@ -291,6 +277,7 @@ class Player:
             total_att = sum([game.att for game in season.reg_season_games if game is not None])
             total_pass_yds = sum([game.pass_yds for game in season.reg_season_games if game is not None])
             total_pass_tds = sum([game.pass_tds for game in season.reg_season_games if game is not None])
+            total_ints = sum([game.ints for game in season.reg_season_games if game is not None])
 
             # Add postseason stats if indicated
             if include_ps and season.num_ps_games > 0:
@@ -299,6 +286,7 @@ class Player:
                 total_att += sum([game.att for game in season.ps_games.values() if game is not None])
                 total_pass_yds += sum([game.pass_yds for game in season.ps_games.values() if game is not None])
                 total_pass_tds += sum([game.pass_tds for game in season.ps_games.values() if game is not None])
+                total_ints += sum([game.ints for game in season.ps_games.values() if game is not None])
 
             # Season passing averages
             avg_cmp = round(total_cmp / num_games_played, ndigits=2)
@@ -306,9 +294,9 @@ class Player:
             avg_pass_yds = round(total_pass_yds / num_games_played, ndigits=2)
             avg_pass_tds = round(total_pass_tds / num_games_played, ndigits=2)
             total_pass_avg = round(total_pass_yds / total_att, ndigits=2)
-            total_cmp_pct = round(total_cmp / total_att, ndigits=2) * 100.0
+            total_cmp_pct = 0 if total_att == 0 else round(total_cmp / total_att, ndigits=2) * 100.0
 
-            print(f"Season passing totals: {total_cmp}/{total_att} ({total_cmp_pct}%) for {total_pass_yds} yards and {total_pass_tds} touchdowns in {num_games_played} games")
+            print(f"Season passing totals: {total_cmp}/{total_att} ({total_cmp_pct}%) for {total_pass_yds} yards and {total_pass_tds} touchdowns in {num_games_played} games, {total_pass_tds}/{total_ints} TD/Int")
             print(f"Season passing averages: {avg_cmp}/{avg_att} for {avg_pass_yds} yards and {avg_pass_tds} touchdowns per game at {total_pass_avg} yards per attempt")
 
         def display_season_rushing_stats(season: Player_Season, include_ps: bool):
@@ -328,7 +316,7 @@ class Player:
             avg_carries = round(total_carries / num_games_played, ndigits=2)
             avg_rush_yds = round(total_rush_yds / num_games_played, ndigits=2)
             avg_rush_tds = round(total_rush_tds / num_games_played, ndigits=2)
-            total_rush_avg = round(total_rush_yds / total_carries, ndigits=2)
+            total_rush_avg = 0 if total_carries == 0 else round(total_rush_yds / total_carries, ndigits=2)
 
             print(f"Season rushing totals: {total_carries} carries for {total_rush_yds} yards and {total_rush_tds} touchdowns in {num_games_played} games")
             print(f"Season rushing averages: {avg_carries} carries for {avg_rush_yds} yards and {avg_rush_tds} touchdowns per game at {total_rush_avg} yards per carry")
@@ -405,9 +393,9 @@ class Player:
             display_season_receiving_stats(season, include_ps)
 
         season_fpts = [game.fpts for game in season.reg_season_games if game is not None]
+        print(season_fpts)
         if include_ps:
             season_fpts.extend([game.fpts for game in season.ps_games.values() if game is not None])
-
 
         total_fpts = round(sum(season_fpts), ndigits=2)
         avg_fpts = round(total_fpts / num_games_played, ndigits=2)
@@ -418,31 +406,21 @@ class Player:
             plot_fantasy_season(games_played, season_fpts, avg_fpts)
 
 class Quarterback(Player):
-    def __init__(self, name: str, position: str, age: int, accuracy: int, strength: int, 
-                            speed: int, stamina: int, career: list[Player_Season] = None):
-                   
-                super().__init__(name, position, age, speed, stamina, career)
-                           
-                self.accuracy = accuracy
-                self.strength = strength
+    def __init__(self, name: str, position: str, retired: bool = False, career: list[Player_Season] = None):
+        super().__init__(name, position, retired, career)
 
     def to_dict(self):
         return {
             "__type__": "Quarterback",
             "name": self.name,
             "position": self.position,
-            "age": self.age,
-            "accuracy": self.accuracy,
-            "strength": self.strength,
-            "speed": self.speed,
-            "stamina": self.stamina,
+            "retired": self.retired,
             "career": self.career_stats
             }
 
     @classmethod
     def from_dict(cls, d: dict):
-        return Quarterback(d["name"], d["position"], d["age"], 
-                           d["accuracy"], d["strength"], d["speed"], d["stamina"], d["career"])
+        return Quarterback(d["name"], d["position"], retired=d["retired"], career=d["career"])
 
     def add_game(self, week, opponent, att, cmp, pass_yds, pass_tds, pass_lng, ints, sacks,
                  carries, rush_yds, rush_tds, rush_lng, fum, season: int = -1) -> None:
@@ -511,31 +489,21 @@ class Quarterback(Player):
         print(output)
 
 class Runningback(Player):
-    def __init__(self, name: str, position: str, age: int, catching: int, strength: int, 
-                 speed: int, stamina: int, career: list[Player_Season] = None):
-        
-        super().__init__(name, position, age, speed, stamina, career)
-                
-        self.catching = catching
-        self.strength = strength
+    def __init__(self, name: str, position: str, retired: bool = False, career: list[Player_Season] = None):
+        super().__init__(name, position, retired, career)
 
     def to_dict(self):
             return {
                 "__type__": "Runningback",
                 "name": self.name,
                 "position": self.position,
-                "age": self.age,
-                "catching": self.catching,
-                "strength": self.strength,
-                "speed": self.speed,
-                "stamina": self.stamina,
+                "retired": self.retired,
                 "career": self.career_stats
                 }
 
     @classmethod
     def from_dict(cls, d: dict):
-        return Runningback(d["name"], d["position"], d["age"], 
-                           d["catching"], d["strength"], d["speed"], d["stamina"], d["career"])
+        return Runningback(d["name"], d["position"], retired=d["retired"], career=d["career"])
 
     def add_game(self, week, opponent, carries, rush_yds, rush_tds, rush_lng,
                  rec, rec_yds, rec_tds, rec_lng, fum, season: int = -1) -> None:
@@ -612,31 +580,21 @@ class Runningback(Player):
 
 # Receiver class applies to both WRs and TEs
 class Receiver(Player):
-    def __init__(self, name: str, position: str, age: int, catching: int, strength: int, 
-                 speed: int, stamina: int, career: list[Player_Season] = None):
-        
-        super().__init__(name, position, age, speed, stamina, career)
-        
-        self.catching = catching
-        self.strength = strength
+    def __init__(self, name: str, position: str, retired: bool = False, career: list[Player_Season] = None):
+        super().__init__(name, position, retired, career)
 
     def to_dict(self):
         return {
             "__type__": "Receiver",
             "name": self.name,
             "position": self.position,
-            "age": self.age,
-            "catching": self.catching,
-            "strength": self.strength,
-            "speed": self.speed,
-            "stamina": self.stamina,
+            "retired": self.retired,
             "career": self.career_stats
             }
 
     @classmethod
     def from_dict(cls, d):
-        return Receiver(d["name"], d["position"], d["age"], 
-                        d["catching"], d["strength"], d["speed"], d["stamina"], d["career"])
+        return Receiver(d["name"], d["position"], retired=d["retired"], career=d["career"])
 
     def add_game(self, week, opponent: str, rec: int, rec_yds: int, rec_tds: int ,
                   rec_lng: int, fum: int, season: int = -1) -> None:
@@ -735,35 +693,48 @@ def save_data(player_dict):
         json.dump(player_dict, f, default=encode)
 
 ################################ Terminal-interaction / Interface level functions ###############################
+def display_known_players(players: dict[Player]):
+    active_players = []
+    retired_players = []
+    for player_name, player in zip(players.keys(), players.values()):
+        if is_retired(player):
+            retired_players.append(player_name)
+        else:
+            active_players.append(player_name)
+
+    print("Active players:", active_players)
+    print("Retired players:", retired_players)
+
 def create_player(players: dict[Player], player_name: str) -> None:
     # Adds a Receiver with the inputted data to the player dictionary
     position = input("Create new player. Position? \n")
-    age = input("Age? \n")
-    skill = input("Skill? \n")
-    strength = input("Strength? \n")
-    speed = input("Speed? \n")
-    stamina = input("Stamina? \n")
-
-    args = (player_name, position, age, skill, strength, speed, stamina)
 
     if position == "WR" or position == "TE":
-        players[player_name] = Receiver(*args)
+        players[player_name] = Receiver(player_name, position)
     elif position == "RB":
-        players[player_name] = Runningback(*args)
+        players[player_name] = Runningback(player_name, position)
     elif position == "QB":
-        players[player_name] = Quarterback(*args)
+        players[player_name] = Quarterback(player_name, position)
     
     print(f"Player {player_name} added to registry.")
 
-def delete_player(players: dict[Player], player_name: str) -> None:
-    if players.get(player_name) is not None:
-        players.pop(player_name)
-        print(players)
-        print(f"Player {player_name}'s data erased.")
-    else:
-        print("Player not in registry.")
+def delete_player(players: dict[Player], player: Player) -> None:
+    players.pop(player.name)
+
+def is_retired(player: Player):
+    return player.retired
+
+def unretire_player(player: Player):
+    player.retired = False
+
+def retire_player(players: dict[Player], player) -> None:
+    player.retired = True
 
 def log_game(player: Player):
+    if player.retired == True:
+        print("Cannot log new games for retired players. \n")
+        return
+    
     valid_ps_game_inputs = {"wc": "WC",
                             "WC": "WC",
                             "wild card": "WC",
@@ -951,6 +922,3 @@ def display_season(player: Player):
         player.display_season_stats(season, include_ps)
     except:
         print("An error occurred. Try not including postseason if the player did not play any games that postseason. \n")
-
-def delete_player(players: dict[Player], player: Player):
-    players.pop(player.name)
