@@ -386,7 +386,7 @@ class Player:
         if self.position == "QB":
             display_season_passing_stats(season, include_ps)
             display_season_rushing_stats(season, include_ps)
-        elif self.position == "QB":
+        elif self.position == "RB":
             display_season_rushing_stats(season, include_ps)
             display_season_receiving_stats(season, include_ps)
         else: # WR or TE
